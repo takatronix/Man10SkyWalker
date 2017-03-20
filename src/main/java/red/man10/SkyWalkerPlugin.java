@@ -69,6 +69,9 @@ public final class SkyWalkerPlugin extends JavaPlugin implements Listener {
             return false;
         }
         String name = item.getItemMeta().getDisplayName();
+        if(name == null){
+            return false;
+        }
         if(!controllerName.contentEquals(name)){
             return false;
         }
@@ -95,6 +98,9 @@ public final class SkyWalkerPlugin extends JavaPlugin implements Listener {
                 continue;
             }
             Player p = Bukkit.getPlayer(id);
+            if(p == null){
+                return ;
+            }
 
             ItemStack item = p.getInventory().getItemInMainHand();
             if(!isController(item)){
