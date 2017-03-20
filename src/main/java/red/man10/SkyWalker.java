@@ -3,10 +3,8 @@ package red.man10;
 import org.bukkit.*;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
-import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
-import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
 
@@ -54,7 +52,7 @@ public class SkyWalker {
             this.z = 0;
         }
         boolean isSamePos(BlockPlace bp){
-            if(bp.world.contentEquals(world) && bp.x == x && bp.y == y && bp.z == y){
+            if(bp.world.equalsIgnoreCase(world) && bp.x == x && bp.y == y && bp.z == z){
                 return true;
             }
             return  false;
@@ -74,29 +72,23 @@ public class SkyWalker {
         }
     }
 
-    Material                material =  Material.EMERALD_BLOCK;
+    Boolean                 isSneaking = false;
+    Material                material =  Material.DIAMOND_BLOCK;
     BlockPlace              pos = null;        //  現在地
     SkyWalkerType           type;
     ArrayList<BlockPlace>   blocks = new ArrayList<BlockPlace>();
 
     void    setBlock(Player p,BlockPlace b){
 
-
         for(int i = 0;i < blocks.size();i++){
             BlockPlace bp = blocks.get(i);
             if(bp.isSamePos(b)){
-               // p.sendMessage("同じなので登録しない"+b.desc());
                 return ;
             }
-
         }
-
         if(b.getLocation().getBlock().getType() == Material.AIR ){
             b.getLocation().getBlock().setType(material);
             blocks.add(new BlockPlace(b));
-           // p.sendMessage("保存した:"+b.desc()+":"+blocks.size());
-        }else{
-           // p.sendMessage("できなかった:"+b.desc());
         }
 
     }
@@ -124,7 +116,7 @@ public class SkyWalker {
         blocks.remove(index);
     }
     //     すべての管理ブロックを削除する
-    void removeAllBlocks(Player p){
+    void removeAllBlocks(){
         for(;;){
             if(blocks.size() ==0){
                 break;
@@ -133,7 +125,6 @@ public class SkyWalker {
             if(b.getLocation().getBlock().getType() == material ){
             }
             b.getLocation().getBlock().setType(Material.AIR);
-           // p.sendMessage("removing:"+b.desc() +"size:"+blocks.size());
             blocks.remove(0);
 
         }
@@ -147,14 +138,12 @@ public class SkyWalker {
             return;
         }
         Location loc = p.getLocation().getBlock().getRelative(BlockFace.DOWN).getLocation();
-
         BlockPlace bp = new BlockPlace(loc);
 
         if(pos == null){
             pos = bp;
             return;
         }
-
         if(!bp.isSamePos(pos)){
             onBaseChanged(p,bp);
             pos = bp;
@@ -162,9 +151,14 @@ public class SkyWalker {
 
     }
 
-    int delete(Player p){
+    int delete(){
+        removeAllBlocks();
 
-        removeAllBlocks(p);
+        if(pos != null){
+            Location l = pos.getLocation();
+            l.getWorld().playEffect(l, Effect.ENDER_SIGNAL, 5);
+            l.getWorld().playSound(l,Sound.ENTITY_ARROW_HIT ,1, 0);
+        }
 
         return 0;
     }
@@ -172,8 +166,9 @@ public class SkyWalker {
     int onPlayerToggleSneakEvent(PlayerToggleSneakEvent event){
 
         if(event.isSneaking()){
-            delete(event.getPlayer());
+            delete();
         }
+        isSneaking = event.isSneaking();
 
 
         return 0;
@@ -181,12 +176,7 @@ public class SkyWalker {
     int     onBaseChanged(Player p,BlockPlace bp){
         Location loc = bp.getLocation();
 
-      //  Location lastLoc = pos.getLocation();
-
-        removeAllBlocks(p);
-
-        int xs[] = { 0,0,0, 1,1,1,-1,-1,-1};
-        int ys[] = { 0,1,-1, 0,1,-1,0,1,-1};
+        removeAllBlocks();
 
         BlockPlace b = new BlockPlace(bp);
         setBlock(p,b);
@@ -194,33 +184,29 @@ public class SkyWalker {
         b = new BlockPlace(bp);
         b.x ++;
         setBlock(p,b);
-
         b = new BlockPlace(bp);
         b.x --;
         setBlock(p,b);
-
         b = new BlockPlace(bp);
         b.z --;
         setBlock(p,b);
-
         b = new BlockPlace(bp);
         b.z ++;
         setBlock(p,b);
 
-/*
-        for(int x = -3;x < 3;x++){
 
-            for(int y = -3;y < 3;y++){
-                b = new BlockPlace(bp);
-                b.x += x;
-                b.z += y;
-                setBlock(p,b);
-
+        if(false){
+            int carpetSize = 2;
+            for(int x = -1* carpetSize;x <carpetSize ;x++){
+                for(int y = -1* carpetSize;y < carpetSize;y++){
+                    b = new BlockPlace(bp);
+                    b.x += x;
+                    b.z += y;
+                    setBlock(p,b);
+                }
             }
-        }
-        */
 
-      //  loc.getWorld().playEffect(loc, Effect.ENDER_SIGNAL, 2003);
+        }
 
         return 1;
     }
@@ -228,10 +214,12 @@ public class SkyWalker {
 
     boolean hitCheck(Location loc){
         BlockPlace bp = new BlockPlace(loc);
+
         int index = getBlockIndex(bp);
         if(index == -1){
             return false;
         }
+
         return true;
     }
 
