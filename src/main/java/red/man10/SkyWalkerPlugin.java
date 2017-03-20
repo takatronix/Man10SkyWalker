@@ -115,11 +115,12 @@ public final class SkyWalkerPlugin extends JavaPlugin implements Listener {
                     map.put(p.getUniqueId(),sw);
                    // p.sendMessage(prefix+"You called SkyWalker.");
                     p.setVelocity(p.getVelocity().setY(1));
+                    sw.pos = new BlockPlace(p.getLocation());
                     if(sw.pos != null){
                         Location l = sw.pos.getLocation();
                         //sw.pos.getLocation().getWorld().playSound(loc, Sound.BLOCK_FIRE_EXTINGUISH ,1, 0);
-                        l.getWorld().playSound(l,Sound.BLOCK_NOTE_HARP ,1, 0);
-                        p.setWalkSpeed((float)1.0);
+                        l.getWorld().playSound(l,Sound.BLOCK_CHORUS_FLOWER_GROW ,1, 0);
+                        p.setWalkSpeed((float)0.4);
 
                     }
                 }
