@@ -5,6 +5,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
 
@@ -12,13 +13,16 @@ import java.util.ArrayList;
  * Created by takatronix on 2017/03/19.
  */
 public class SkyWalker {
+    private final SkyWalkerPlugin plugin;
 
     Boolean                 isSneaking = false;
     Material                material =  Material.DIAMOND_BLOCK;
     BlockPlace              pos = null;        //  現在地
-   // SkyWalkerType           type;
     ArrayList<BlockPlace>   blocks = new ArrayList<BlockPlace>();
 
+    SkyWalker(   SkyWalkerPlugin plugin){
+        this.plugin = plugin;
+    }
     void    setBlock(Player p,BlockPlace b){
 
         for(int i = 0;i < blocks.size();i++){
@@ -75,9 +79,11 @@ public class SkyWalker {
     void onPlayerMove(PlayerMoveEvent e){
 
         Player p = e.getPlayer();
-        if(p.getInventory().getItemInMainHand().getType() != Material.REDSTONE_TORCH_ON){
+        ItemStack item = p.getInventory().getItemInMainHand();
+        if(plugin.isController(item) == false){
             return;
         }
+
         Location loc = p.getLocation().getBlock().getRelative(BlockFace.DOWN).getLocation();
         BlockPlace bp = new BlockPlace(loc);
 
@@ -97,7 +103,7 @@ public class SkyWalker {
 
         if(pos != null){
             Location l = pos.getLocation();
-            l.getWorld().playEffect(l, Effect.ENDER_SIGNAL, 5);
+           // l.getWorld().playEffect(l, Effect.ENDER_SIGNAL, 5);
             l.getWorld().playSound(l,Sound.ENTITY_ARROW_HIT ,1, 0);
         }
 
@@ -135,9 +141,28 @@ public class SkyWalker {
         b.z ++;
         setBlock(p,b);
 
+        b = new BlockPlace(bp);
+        b.z ++;
+        b.x ++;
+        setBlock(p,b);
+
+        b = new BlockPlace(bp);
+        b.z --;
+        b.x --;
+        setBlock(p,b);
+
+        b = new BlockPlace(bp);
+        b.z ++;
+        b.x --;
+
+        setBlock(p,b);
+        b = new BlockPlace(bp);
+        b.z --;
+        b.x ++;
+        setBlock(p,b);
 
         if(false){
-            int carpetSize = 2;
+            int carpetSize = 1;
             for(int x = -1* carpetSize;x <carpetSize ;x++){
                 for(int y = -1* carpetSize;y < carpetSize;y++){
                     b = new BlockPlace(bp);
@@ -160,7 +185,6 @@ public class SkyWalker {
         if(index == -1){
             return false;
         }
-
         return true;
     }
 

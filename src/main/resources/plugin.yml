@@ -4,3 +4,8 @@ main: red.man10.SkyWalkerPlugin
 prefix: Man10SkyWalker
 description: Minecraft SkyWalkerPlugin
 website: http://man10.red
+commands:
+   sw:
+      description: Minecraft Drone
+      permission: man10.skywaker
+      permission-message: You don't have <permission>
