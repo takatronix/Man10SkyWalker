@@ -98,11 +98,11 @@ public final class SkyWalkerPlugin extends JavaPlugin implements Listener {
                 continue;
             }
             Player p = Bukkit.getPlayer(id);
-            ItemStack item = p.getInventory().getItemInOffHand();
+
+            ItemStack item = p.getInventory().getItemInMainHand();
             if(!isController(item)){
                 return;
             }
-
             SkyWalker sw = map.get(id);
             if(sw.pos != null ){
                 Location l = sw.pos.getLocation();
