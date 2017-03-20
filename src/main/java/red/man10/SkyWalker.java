@@ -112,10 +112,17 @@ public class SkyWalker {
 
     int onPlayerToggleSneakEvent(PlayerToggleSneakEvent event){
 
+        isSneaking = event.isSneaking();
+
+
+        //      リモコンでないなら
+        if(!plugin.isController(event.getPlayer().getInventory().getItemInMainHand())) {
+            return 0;
+        }
+
         if(event.isSneaking()){
             delete();
         }
-        isSneaking = event.isSneaking();
 
 
         return 0;

@@ -257,10 +257,7 @@ public final class SkyWalkerPlugin extends JavaPlugin implements Listener {
             return;
         }
 
-        //      リモコンでないなら
-        if(!isController(p.getInventory().getItemInMainHand())) {
-            return;
-        }
+
         SkyWalker sw = map.get(e.getPlayer().getUniqueId());
         sw.onPlayerToggleSneakEvent(e);
     }
