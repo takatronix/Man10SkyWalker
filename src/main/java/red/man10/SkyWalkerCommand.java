@@ -26,7 +26,6 @@ public class SkyWalkerCommand  implements CommandExecutor {
             p.sendMessage("§ehttp://man10.red Minecraft Man10 Server");
             p.sendMessage("§ecreated by takatronix http://takatronix.com");
             p.sendMessage("§ecreated by takatronix http://twitter.com/takatronix");
-
             return false;
         }
 
@@ -35,7 +34,6 @@ public class SkyWalkerCommand  implements CommandExecutor {
                 sender.sendMessage("/sw get [dronetype:0-10]");
                 return false;
             }
-
             plugin.giveController((Player)sender,args[1]);
             return true;
         }

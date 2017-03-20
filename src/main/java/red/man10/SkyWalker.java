@@ -1,5 +1,6 @@
 package red.man10;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.bukkit.*;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
@@ -15,6 +16,7 @@ import java.util.ArrayList;
 public class SkyWalker {
     private final SkyWalkerPlugin plugin;
 
+    Boolean                 isClosed = true;
     Boolean                 isSneaking = false;
     Material                material =  Material.DIAMOND_BLOCK;
     BlockPlace              pos = null;        //  現在地
@@ -35,7 +37,6 @@ public class SkyWalker {
             b.getLocation().getBlock().setType(material);
             blocks.add(new BlockPlace(b));
         }
-
     }
 
     int     getBlockIndex(BlockPlace b){
@@ -47,7 +48,6 @@ public class SkyWalker {
         }
         return -1;
     }
-
 
     void    removeBlock(BlockPlace b){
         int index = getBlockIndex(b);
@@ -71,10 +71,9 @@ public class SkyWalker {
             }
             b.getLocation().getBlock().setType(Material.AIR);
             blocks.remove(0);
-
         }
-
     }
+
 
     void onPlayerMove(PlayerMoveEvent e){
 
@@ -92,7 +91,14 @@ public class SkyWalker {
             return;
         }
         if(!bp.isSamePos(pos)){
-            onBaseChanged(p,bp);
+            int ret = onBaseChanged(p,bp);
+            if(ret == 0){
+                if(!isClosed ){
+                    p.sendMessage(plugin.prefix+ "Your SkyWalker is stored.");
+                    delete();
+                    isClosed = true;
+                }
+            }
             pos = bp;
         }
 
@@ -106,6 +112,7 @@ public class SkyWalker {
            // l.getWorld().playEffect(l, Effect.ENDER_SIGNAL, 5);
             l.getWorld().playSound(l,Sound.ENTITY_ARROW_HIT ,1, 0);
         }
+        pos = null;
 
         return 0;
     }
@@ -118,11 +125,9 @@ public class SkyWalker {
         if(!plugin.isController(event.getPlayer().getInventory().getItemInMainHand())) {
             return 0;
         }
-
         if(event.isSneaking()){
             delete();
         }
-
 
         return 0;
     }
@@ -177,10 +182,9 @@ public class SkyWalker {
                     setBlock(p,b);
                 }
             }
-
         }
 
-        return 1;
+        return blocks.size();
     }
 
 

@@ -37,12 +37,8 @@ public final class SkyWalkerPlugin extends JavaPlugin implements Listener {
 
     //      ユーザーをキーにしたアイテム情報
     HashMap<UUID,SkyWalker> map = new HashMap<UUID,SkyWalker>();
-
     //
     String  prefix = "[§bSkyWalker§f] ";
-
-
-
 
     void giveController(Player p,String type){
 
@@ -50,7 +46,6 @@ public final class SkyWalkerPlugin extends JavaPlugin implements Listener {
             p.sendMessage("§cYou don't have permission:"+adminPermission);
             return;
         }
-
         ItemStack item = new ItemStack(Material.REDSTONE_TORCH_ON,1);
         ItemMeta im = item.getItemMeta();
         im.setDisplayName(controllerName);
@@ -60,35 +55,37 @@ public final class SkyWalkerPlugin extends JavaPlugin implements Listener {
         lore.add("§b§l最新技術でつくられており、もはや魔法と区別がつかない");
         im.setLore(lore);
         item.setItemMeta(im);
-
         p.getInventory().addItem(item);
     }
-
-
-
-
 
 
     //     サーバーメッセージ
     void serverMessage(String text){
         Bukkit.getServer().broadcastMessage(prefix +  text);
     }
+    //      　
+    boolean isController(ItemStack item){
+        if(item.getType() != controllerMaterial){
+            return false;
+        }
+        String name = item.getItemMeta().getDisplayName();
+        if(!controllerName.contentEquals(name)){
+            return false;
+        }
+        return true;
+    }
 
     @Override
     public void onEnable() {
-        // Plugin startup logicParti
         getServer().getPluginManager().registerEvents (this,this);
         Bukkit.getServer().broadcastMessage(prefix +  "SkyWalker is loaded.");
-
         getCommand("sw").setExecutor(new SkyWalkerCommand(this));
-
         Bukkit.getScheduler().runTaskTimer(this, new Runnable() {
             @Override
             public void run() {
                 onTickTimer();
             }
         }, 0, 4);
-
     }
 
     public void onTickTimer(){
@@ -135,20 +132,12 @@ public final class SkyWalkerPlugin extends JavaPlugin implements Listener {
             sw.delete();
         }
     }
-    boolean isController(ItemStack item){
-        if(item.getType() != controllerMaterial ){
-            return false;
-        }
-        String name = item.getItemMeta().getDisplayName();
-        if(!controllerName.contentEquals(name)){
-            return false;
-        }
-        return true;
-    }
+
+
+
 
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent e) {
-
 
         //      コントローラーの右クリ
         if (e.getAction() == Action.RIGHT_CLICK_BLOCK ) {
@@ -159,24 +148,23 @@ public final class SkyWalkerPlugin extends JavaPlugin implements Listener {
             return;
         }
 
-
         if (e.getAction() == Action.LEFT_CLICK_AIR || e.getAction() == Action.LEFT_CLICK_BLOCK ) {
-
             Player p = e.getPlayer();
-
             //      リモコンでないなら
             if(!isController(p.getInventory().getItemInMainHand())) {
                 return;
             }
 
+            /////////////////////////////////////
             //      すでに登録済み
+            /////////////////////////////////////
             if(map.containsKey(p.getUniqueId())){
                 SkyWalker sw = map.get(p.getUniqueId());
                 if(sw != null){
                     sw.delete();
-                    //  p.sendMessage(prefix+"You stored SkyWalker.");
                     map.remove(p.getUniqueId());
                     p.setWalkSpeed((float).2);
+
                 }
                 return;
             }
@@ -185,19 +173,26 @@ public final class SkyWalkerPlugin extends JavaPlugin implements Listener {
             /////////////////////////////////////
             SkyWalker sw = new SkyWalker(this);
             map.put(p.getUniqueId(),sw);
-            // p.sendMessage(prefix+"You called SkyWalker.");
             p.setVelocity(p.getVelocity().setY(1));
             sw.pos = new BlockPlace(p.getLocation());
             if(sw.pos != null){
                 Location l = sw.pos.getLocation();
                 //sw.pos.getLocation().getWorld().playSound(loc, Sound.BLOCK_FIRE_EXTINGUISH ,1, 0);
                 l.getWorld().playSound(l,Sound.BLOCK_CHORUS_FLOWER_GROW ,1, 0);
-                p.setWalkSpeed((float)0.3);
+                p.setWalkSpeed((float)0.5);
+
+
+
+                    getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+                        public void run() {
+                            if(sw.isClosed){
+                                sw.isClosed = false;
+                                p.sendMessage(prefix + "You called SkyWalker.");
+                            }
+                        }
+                    }, 10);
 
             }
-
-
-
         }
 
     }
@@ -221,7 +216,6 @@ public final class SkyWalkerPlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onPistonEvent(BlockPistonExtendEvent e){
-
         List<UUID> userList = new ArrayList<UUID>(map.keySet());
         for(UUID id : userList){
             if(!map.containsKey(id)){
@@ -238,15 +232,14 @@ public final class SkyWalkerPlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent e) {
-
         if(!map.containsKey(e.getPlayer().getUniqueId())){
             return;
         }
+
         SkyWalker sw = map.get(e.getPlayer().getUniqueId());
-
-
-
-
+        if(sw.isClosed){
+            return ;
+        }
         sw.onPlayerMove(e);
     }
 
@@ -256,8 +249,6 @@ public final class SkyWalkerPlugin extends JavaPlugin implements Listener {
         if(!map.containsKey(e.getPlayer().getUniqueId())){
             return;
         }
-
-
         SkyWalker sw = map.get(e.getPlayer().getUniqueId());
         sw.onPlayerToggleSneakEvent(e);
     }

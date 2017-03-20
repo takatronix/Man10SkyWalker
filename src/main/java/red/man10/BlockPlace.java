@@ -9,12 +9,12 @@ import org.bukkit.World;
  */
 //      ブロック設置情報
 public class BlockPlace {
+
     BlockPlace(BlockPlace bp) {
         this.world = bp.world;
         this.x = bp.x;
         this.y = bp.y;
         this.z = bp.z;
-
     }
 
     BlockPlace(String world, int x, int y, int z) {
