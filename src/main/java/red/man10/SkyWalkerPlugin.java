@@ -10,10 +10,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPistonExtendEvent;
 import org.bukkit.event.block.BlockPistonRetractEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.player.PlayerToggleSneakEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -28,8 +25,7 @@ import java.util.UUID;
 
 public final class SkyWalkerPlugin extends JavaPlugin implements Listener {
 
-    Material    controllerMaterial = Material.REDSTONE_TORCH_ON;
-    String      controllerName = "§e§lSkyWalker Controller";
+
 
     String adminPermission = "man10.skywaker.admin";
     String driverPermission = "man10.skywaker.drive";
@@ -40,23 +36,6 @@ public final class SkyWalkerPlugin extends JavaPlugin implements Listener {
     //
     String  prefix = "[§bSkyWalker§f] ";
 
-    void giveController(Player p,String type){
-
-        if(p.hasPermission(adminPermission) == false){
-            p.sendMessage("§cYou don't have permission:"+adminPermission);
-            return;
-        }
-        ItemStack item = new ItemStack(Material.REDSTONE_TORCH_ON,1);
-        ItemMeta im = item.getItemMeta();
-        im.setDisplayName(controllerName);
-        ArrayList<String> lore = new ArrayList<String>();
-        lore.add("§9Man10 Technology's latest drone 'SkyWalker's Controller'");
-        lore.add("§b§lMan10テック社の最新ドローン'スカイウォーカー'のリモコン");
-        lore.add("§b§l最新技術でつくられており、もはや魔法と区別がつかない");
-        im.setLore(lore);
-        item.setItemMeta(im);
-        p.getInventory().addItem(item);
-    }
 
 
     //     サーバーメッセージ
@@ -64,20 +43,11 @@ public final class SkyWalkerPlugin extends JavaPlugin implements Listener {
         Bukkit.getServer().broadcastMessage(prefix +  text);
     }
     //      　
-    boolean isController(ItemStack item){
-        if(item.getType() != controllerMaterial){
-            return false;
-        }
-        String name = item.getItemMeta().getDisplayName();
-        if(name == null){
-            return false;
-        }
-        if(!controllerName.contentEquals(name)){
-            return false;
-        }
-        return true;
-    }
 
+    void giveController(Player p,String type){
+        SkyWalker sw = getObject(p);
+        sw.giveController(p,type);
+    }
     @Override
     public void onEnable() {
         getServer().getPluginManager().registerEvents (this,this);
@@ -88,10 +58,15 @@ public final class SkyWalkerPlugin extends JavaPlugin implements Listener {
             public void run() {
                 onTickTimer();
             }
-        }, 0, 4);
+        }, 0, 1);
     }
 
     public void onTickTimer(){
+
+
+
+
+
         List<UUID> userList = new ArrayList<UUID>(map.keySet());
         for(UUID id : userList) {
             if (!map.containsKey(id)) {
@@ -101,19 +76,19 @@ public final class SkyWalkerPlugin extends JavaPlugin implements Listener {
             if(p == null){
                 return ;
             }
-
             ItemStack item = p.getInventory().getItemInMainHand();
-            if(!isController(item)){
+
+            SkyWalker sw = getObject(p);
+            sw.playSound();
+
+            if(!sw.isController(item)){
                 return;
             }
-            SkyWalker sw = map.get(id);
-            if(sw.pos != null ){
-                Location l = sw.pos.getLocation();
-                l.getWorld().playSound(l,Sound.ENTITY_ARROW_HIT ,1, 0);
-                if(sw.isSneaking){
-                    sw.delete();
-                }
+            if(p.isSneaking()){
+                sw.delete();
             }
+
+
         }
     }
 
@@ -139,17 +114,65 @@ public final class SkyWalkerPlugin extends JavaPlugin implements Listener {
         }
     }
 
+    SkyWalker getObject(Player p){
 
+        /////////////////////////////////////
+        //      すでに登録済み
+        /////////////////////////////////////
+        if(map.containsKey(p.getUniqueId())){
+            SkyWalker sw = map.get(p.getUniqueId());
+            /*
+            if(sw != null){
+                sw.delete();
+                map.remove(p.getUniqueId());
+                // p.setWalkSpeed((float).2);
 
+            }*/
+            return sw;
+        }
+        /////////////////////////////////////
+        //      新規作成
+        /////////////////////////////////////
+        SkyWalker sw = new SkyWalker(this);
+       // sw.pos = new BlockPlace(p.getLocation());
+        map.put(p.getUniqueId(),sw);
+        return sw;
+    }
+    @EventHandler
+    public void onToggleFlight(PlayerToggleFlightEvent e) {
+     //   e.getPlayer().sendMessage("toggle flgiht");
+        e.setCancelled(true);
+    }
 
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent e) {
 
+
+        //      プレーヤのスカイウォーカー
+        SkyWalker sw = getObject(e.getPlayer());
+
         //      コントローラーの右クリ
         if (e.getAction() == Action.RIGHT_CLICK_BLOCK ) {
+            e.setCancelled(true);
+
+
+        }
+        if (e.getAction() == Action.RIGHT_CLICK_AIR ) {
+
             Player p = e.getPlayer();
-            if(isController(p.getInventory().getItemInMainHand())){
-                e.setCancelled(true);
+            if(sw.isController(p.getInventory().getItemInMainHand())){
+                e.getPlayer().setFlying(true);
+
+                if(p.isFlying()){
+                    sw.delete();
+
+                    Vector v = p.getLocation().getDirection();
+                    v.multiply(1.5);
+                    p.setVelocity(v);
+                }else{
+
+                }
+
             }
             return;
         }
@@ -157,10 +180,44 @@ public final class SkyWalkerPlugin extends JavaPlugin implements Listener {
         if (e.getAction() == Action.LEFT_CLICK_AIR || e.getAction() == Action.LEFT_CLICK_BLOCK ) {
             Player p = e.getPlayer();
             //      リモコンでないなら
-            if(!isController(p.getInventory().getItemInMainHand())) {
+            if(!sw.isController(p.getInventory().getItemInMainHand())) {
                 return;
             }
 
+            float walkSpeed = .2f;
+            float flySpeed = .2f;
+
+
+
+
+
+
+            if(p.isFlying()){
+                p.setAllowFlight(false);
+
+                p.setFlying(false);
+                p.setWalkSpeed(walkSpeed);
+                p.sendMessage("止まった");
+
+                sw.delete();
+                sw.isClosed = true;
+
+            }else{
+                p.setFlySpeed(flySpeed);
+                 p.setVelocity(p.getVelocity().setY(1.2));
+
+                getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+                                    public void run() {
+                                     p.sendMessage("浮いた");
+                                        p.setAllowFlight(true);
+                                        p.setFlying(false);
+                                        sw.isClosed = false;
+                                    }
+                                }, 10);
+
+            }
+
+/*
             /////////////////////////////////////
             //      すでに登録済み
             /////////////////////////////////////
@@ -169,7 +226,7 @@ public final class SkyWalkerPlugin extends JavaPlugin implements Listener {
                 if(sw != null){
                     sw.delete();
                     map.remove(p.getUniqueId());
-                    p.setWalkSpeed((float).2);
+                   // p.setWalkSpeed((float).2);
 
                 }
                 return;
@@ -185,8 +242,7 @@ public final class SkyWalkerPlugin extends JavaPlugin implements Listener {
                 Location l = sw.pos.getLocation();
                 //sw.pos.getLocation().getWorld().playSound(loc, Sound.BLOCK_FIRE_EXTINGUISH ,1, 0);
                 l.getWorld().playSound(l,Sound.BLOCK_CHORUS_FLOWER_GROW ,1, 0);
-                p.setWalkSpeed((float)0.5);
-
+             //   p.setWalkSpeed((float)0.5);
 
 
                     getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
@@ -194,11 +250,14 @@ public final class SkyWalkerPlugin extends JavaPlugin implements Listener {
                             if(sw.isClosed){
                                 sw.isClosed = false;
                                 p.sendMessage(prefix + "You called SkyWalker.");
+                                p.setFlying(true);
                             }
                         }
                     }, 10);
 
             }
+
+            */
         }
 
     }
@@ -238,24 +297,18 @@ public final class SkyWalkerPlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent e) {
-        if(!map.containsKey(e.getPlayer().getUniqueId())){
-            return;
-        }
 
-        SkyWalker sw = map.get(e.getPlayer().getUniqueId());
-        if(sw.isClosed){
-            return ;
-        }
+        SkyWalker sw = getObject(e.getPlayer());
         sw.onPlayerMove(e);
+        if(!sw.isClosed){
+            e.getPlayer().setFlying(true);
+        }
     }
 
     @EventHandler
     public void onPlayerToggleSneakEvent(PlayerToggleSneakEvent e) {
         Player p = e.getPlayer();
-        if(!map.containsKey(e.getPlayer().getUniqueId())){
-            return;
-        }
-        SkyWalker sw = map.get(e.getPlayer().getUniqueId());
+        SkyWalker sw = getObject(p);
         sw.onPlayerToggleSneakEvent(e);
     }
 }

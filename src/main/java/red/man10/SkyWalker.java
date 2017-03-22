@@ -7,18 +7,22 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
+import java.util.Vector;
 
 /**
  * Created by takatronix on 2017/03/19.
  */
 public class SkyWalker {
     private final SkyWalkerPlugin plugin;
+    Material    controllerMaterial = Material.REDSTONE_TORCH_ON;
+    String      controllerName = "§e§lSkyWalker Controller";
 
     Boolean                 isClosed = true;
     Boolean                 isSneaking = false;
-    Material                material =  Material.DIAMOND_BLOCK;
+    Material                material =  Material.IRON_BLOCK;
     BlockPlace              pos = null;        //  現在地
     ArrayList<BlockPlace>   blocks = new ArrayList<BlockPlace>();
 
@@ -71,20 +75,62 @@ public class SkyWalker {
             }
             b.getLocation().getBlock().setType(Material.AIR);
             blocks.remove(0);
+//            Bukkit.getServer().broadcastMessage("sakujo "+b.desc());
         }
     }
+    boolean isController(ItemStack item){
+        if(item.getType() != controllerMaterial){
+            return false;
+        }
+        String name = item.getItemMeta().getDisplayName();
+        if(name == null){
+            return false;
+        }
+        if(!controllerName.contentEquals(name)){
+            return false;
+        }
+        return true;
+    }
 
+
+    void giveController(Player p,String type){
+/*
+        if(p.hasPermission(adminPermission) == false){
+            p.sendMessage("§cYou don't have permission:"+adminPermission);
+            return;
+        }
+*/
+        ItemStack item = new ItemStack(Material.REDSTONE_TORCH_ON,1);
+        ItemMeta im = item.getItemMeta();
+        im.setDisplayName(controllerName);
+        ArrayList<String> lore = new ArrayList<String>();
+        lore.add("§b§lMan10テック社の最新ドローン'スカイウォーカー'のリモコン");
+        lore.add("§b最新技術でつくられており、もはや魔法と区別がつかない");
+        im.setLore(lore);
+        item.setItemMeta(im);
+        p.getInventory().addItem(item);
+    }
 
     void onPlayerMove(PlayerMoveEvent e){
 
         Player p = e.getPlayer();
         ItemStack item = p.getInventory().getItemInMainHand();
-        if(plugin.isController(item) == false){
+        if(isController(item) == false){
             return;
         }
 
-        Location loc = p.getLocation().getBlock().getRelative(BlockFace.DOWN).getLocation();
-        BlockPlace bp = new BlockPlace(loc);
+      //  org.bukkit.util.Vector v = p.getLocation().getDirection();
+       // p.sendMessage("v:"+v.getY());
+     //   double d = v.getY() * 0.1;
+     //   Location loc = p.getLocation();
+      //  loc.subtract(0,0,d);
+      //  p.teleport(loc);
+        if(p.isFlying() == false){
+            return;
+        }
+
+        Location l = p.getLocation().getBlock().getRelative(BlockFace.DOWN).getLocation();
+        BlockPlace bp = new BlockPlace(l);
 
         if(pos == null){
             pos = bp;
@@ -92,13 +138,14 @@ public class SkyWalker {
         }
         if(!bp.isSamePos(pos)){
             int ret = onBaseChanged(p,bp);
+            /*
             if(ret == 0){
                 if(!isClosed ){
                     p.sendMessage(plugin.prefix+ "Your SkyWalker is stored.");
                     delete();
                     isClosed = true;
                 }
-            }
+            }*/
             pos = bp;
         }
 
@@ -107,12 +154,6 @@ public class SkyWalker {
     int delete(){
         removeAllBlocks();
 
-        if(pos != null){
-            Location l = pos.getLocation();
-           // l.getWorld().playEffect(l, Effect.ENDER_SIGNAL, 5);
-            l.getWorld().playSound(l,Sound.ENTITY_ARROW_HIT ,1, 0);
-        }
-        pos = null;
 
         return 0;
     }
@@ -122,17 +163,17 @@ public class SkyWalker {
         isSneaking = event.isSneaking();
 
         //      リモコンでないなら
-        if(!plugin.isController(event.getPlayer().getInventory().getItemInMainHand())) {
+        if(!isController(event.getPlayer().getInventory().getItemInMainHand())) {
             return 0;
         }
-        if(event.isSneaking()){
-            delete();
-        }
+    //    if(event.isSneaking()){
+    //        delete();
+     //   }
 
         return 0;
     }
     int     onBaseChanged(Player p,BlockPlace bp){
-        Location loc = bp.getLocation();
+        //Location loc = bp.getLocation();
 
         removeAllBlocks();
 
@@ -152,6 +193,7 @@ public class SkyWalker {
         b.z ++;
         setBlock(p,b);
 
+        /*
         b = new BlockPlace(bp);
         b.z ++;
         b.x ++;
@@ -171,7 +213,7 @@ public class SkyWalker {
         b.z --;
         b.x ++;
         setBlock(p,b);
-
+*/
         if(false){
             int carpetSize = 1;
             for(int x = -1* carpetSize;x <carpetSize ;x++){
@@ -197,6 +239,13 @@ public class SkyWalker {
         }
         return true;
     }
+    void playSound(){
+        if(isClosed){
+            return;
+        }
+        Location l = pos.getLocation();
+        l.getWorld().playSound(l,Sound.ENTITY_ARMORSTAND_BREAK ,1, 0.2f);
 
+    }
 
 }
