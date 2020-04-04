@@ -1,6 +1,6 @@
 <component name="ArtifactManager">
   <artifact type="jar" name="Man10SkyWalker:jar">
-    <output-path>$PROJECT_DIR$/../spigot/plugins/</output-path>
+    <output-path>$PROJECT_DIR$/../paper/plugins/</output-path>
     <root id="archive" name="Man10SkyWalker.jar">
       <element id="module-output" name="Man10SkyWalker" />
     </root>

@@ -244,7 +244,7 @@ public class SkyWalker {
             return;
         }
         Location l = pos.getLocation();
-        l.getWorld().playSound(l,Sound.ENTITY_ARMORSTAND_BREAK ,1, 0.2f);
+      //  l.getWorld().playSound(l,Sound.ENTITY_ARMORSTAND_BREAK ,1, 0.2f);
 
     }
 
